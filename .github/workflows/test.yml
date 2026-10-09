@@ -47,7 +47,7 @@ jobs:
 
       # Unit tests and the AbiCheck CLI run on .NET 10, which is not provisioned by common-setup
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.x.x
 
