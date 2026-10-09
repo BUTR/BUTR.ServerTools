@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module>
+  <Name value="BUTR Server Info" />
+  <Id value="Bannerlord.ServerInfo" />
+  <Version value="v$version$" />
+  <DefaultModule value="false" />
+  <ModuleCategory value="Server" />
+  <ModuleType value="Community" />
+  <Url value="https://www.nexusmods.com/mountandblade2bannerlord/mods/13895" />
+  <UpdateInfo value="NexusMods:13895" />
+  <DependedModules>
+    <DependedModule Id="Native" />
+    <DependedModule Id="Multiplayer" />
+  </DependedModules>
+  <SubModules>
+    <SubModule>
+      <Name value="Bannerlord.ServerInfo" />
+      <!-- Thin compatibility loader: selects and runs the appropriate Bannerlord.ServerInfo.v<version>.dll for the active server version -->
+      <DLLName value="Bannerlord.ServerInfo.dll" />
+      <SubModuleClassType value="Bannerlord.ServerInfo.SubModule" />
+      <Tags>
+        <Tag key="DedicatedServerType" value="custom" />
+      </Tags>
+    </SubModule>
+  </SubModules>
+</Module>

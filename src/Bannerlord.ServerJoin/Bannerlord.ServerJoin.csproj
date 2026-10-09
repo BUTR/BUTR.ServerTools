@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Bannerlord.ServerJoin</RootNamespace>
+    <AssemblyName>Bannerlord.ServerJoin</AssemblyName>
+
+    <ModuleId>Bannerlord.ServerJoin</ModuleId>
+    <ModuleBinFolders>Win64_Shipping_Client</ModuleBinFolders>
+    <ImplementationProject>$(MSBuildThisFileDirectory)../Bannerlord.ServerJoin.Implementation/Bannerlord.ServerJoin.Implementation.csproj</ImplementationProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- v1.0.0 to v1.0.3: Lobby resides in Native TaleWorlds.MountAndBlade; map check helper absent -->
+    <Implementation Include="1.0.0" ReferenceVersion="1.0.0.44071" />
+    <!-- v1.1.0 to v1.2.5: InquiryData constructor received two additional parameters -->
+    <Implementation Include="1.1.0" ReferenceVersion="1.1.0.127341" />
+    <!-- v1.2.6 to v1.2.8: Multiplayer separated into its own module; RequestJoinCustomGame takes isJoinAsAdmin -->
+    <Implementation Include="1.2.6" ReferenceVersion="1.2.6.306191" />
+    <!-- v1.2.9 to v1.5.1: Introduces MapCheckHelpers and in-game map download support -->
+    <Implementation Include="1.2.9" ReferenceVersion="1.2.9.382561" />
+    <!-- v1.5.2+: RequestJoinCustomGame takes CustomGameJoinType -->
+    <Implementation Include="1.5.2" ReferenceVersion="1.5.2.121216-beta" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bannerlord.ReferenceAssemblies.Core" Version="1.0.0.44071" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Assemblies required by the loader: MBSubModuleBase, Debug, and ApplicationVersion -->
+  <ItemGroup>
+    <GameAssembly Include="TaleWorlds.Library;TaleWorlds.ModuleManager;TaleWorlds.MountAndBlade" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../Shared/**/*.cs" LinkBase="Shared" />
+    <None Include="_Module/**/*" />
+  </ItemGroup>
+
+</Project>

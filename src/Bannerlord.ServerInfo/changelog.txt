@@ -1,0 +1,8 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Game Versions: v1.0.x,v1.1.x,v1.2.x,v1.3.x,v1.4.x,v1.5.x
+* Publishes the server's modules and the mods players need at GET /butr/v1/server, on the game port
+* server-info.json adds a description, links, download references and a Nexus Mods collection
+* reload_server_info in the server console publishes an edited server-info.json; requests are served from memory
+* One download for every server version: the module loads the build made for the running server
+---------------------------------------------------------------------------------------------------

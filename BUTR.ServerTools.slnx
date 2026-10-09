@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Bannerlord.ServerInfo/">
+    <Project Path="src/Bannerlord.ServerInfo.Implementation/Bannerlord.ServerInfo.Implementation.csproj" />
+    <Project Path="src/Bannerlord.ServerInfo/Bannerlord.ServerInfo.csproj" />
+  </Folder>
+  <Folder Name="/Bannerlord.ServerJoin/">
+    <Project Path="src/Bannerlord.ServerJoin.Implementation/Bannerlord.ServerJoin.Implementation.csproj" />
+    <Project Path="src/Bannerlord.ServerJoin/Bannerlord.ServerJoin.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Bannerlord.ServerTools.Tests/Bannerlord.ServerTools.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/AbiCheck/AbiCheck.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,48 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <DebugType>embedded</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <!-- The game runs on .NET Framework 4.7.2 and .NET 6; legacy dedicated servers ran on .NET Core 2.1 and 3.1. Suppress end-of-life framework warnings. -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+    <Authors>BUTR</Authors>
+    <RepositoryUrl>https://github.com/BUTR/BUTR.ServerTools</RepositoryUrl>
+    <!-- Output directory where modules are staged in the directory structure expected by the game: artifacts/<ModuleId>/ -->
+    <ArtifactsFolder>$(MSBuildThisFileDirectory)../artifacts/</ArtifactsFolder>
+  </PropertyGroup>
+
+  <!-- Extracts the module version from the latest entry in changelog.txt using Bannerlord.ChangelogParser format -->
+  <PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)/changelog.txt')">
+    <Version>$([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/changelog.txt')), '(?s)^.*?Version:\s*(\S+).*$', '$1'))</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <!--
+    Implementation projects are compiled once for each targeted game version range.
+    Because each target uses distinct reference assembly packages, every GameVersion is assigned its own
+    intermediate (obj) and output (bin) directory to prevent build artifacts from colliding.
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Implementation')) AND '$(GameVersion)' != ''">
+    <BaseIntermediateOutputPath>obj/$(GameVersion)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin/$(GameVersion)/</BaseOutputPath>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- Exclude nested obj and bin folders across all game version builds to prevent cross-compilation of generated sources -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!-- Linux and macOS build hosts do not have .NET Framework 4.7.2 targeting packs installed by default -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) AND '$(OS)' != 'Windows_NT'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

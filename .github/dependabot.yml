@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    ignore:
+      # Each build compiles against the game and the runtime its range of game versions shipped with
+      - dependency-name: "Bannerlord.ReferenceAssemblies.*"
+      - dependency-name: "Microsoft.AspNetCore.*"
+      - dependency-name: "Newtonsoft.Json"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"

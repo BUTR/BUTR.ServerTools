@@ -1,0 +1,51 @@
+name: Release Module on GitHub
+
+# BUTR/workflows' release-github.yml tags releases as 'v<version>', which would collide across independently versioned modules.
+# This workflow tags releases using the '<ModuleId>-v<version>' convention.
+
+on:
+  workflow_call:
+    inputs:
+      mod_id:
+        required: true
+        type: string
+      mod_name:
+        required: true
+        type: string
+      mod_version:
+        required: true
+        type: string
+      mod_description:
+        required: true
+        type: string
+      artifact_name:
+        required: true
+        type: string
+
+jobs:
+  publish-on-github:
+    name: Publish Module on GitHub
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    environment:
+      name: GitHub Release
+      url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.mod_id }}-v${{ inputs.mod_version }}
+    steps:
+      - name: Download Module artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: ./artifact
+
+      - name: 7z Module
+        run: 7z a -t7z "${{ inputs.mod_id }}.7z" ./artifact/* -mx9
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DESCRIPTION: ${{ inputs.mod_description }}
+        run: >-
+          gh release create "${{ inputs.mod_id }}-v${{ inputs.mod_version }}" "${{ inputs.mod_id }}.7z"
+          --repo "${{ github.repository }}" --target "${{ github.sha }}"
+          --title "${{ inputs.mod_name }} ${{ inputs.mod_version }}" --notes "$DESCRIPTION"
