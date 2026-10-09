@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Condition="'$(GameVersion)' == ''">
+    <GameVersion>1.2.7</GameVersion>
+    <GameReferenceVersion>1.2.7.31207</GameReferenceVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Bannerlord.ServerInfo</RootNamespace>
+    <ModuleId>Bannerlord.ServerInfo</ModuleId>
+    <AssemblyName>$(ModuleId).v$(GameVersion)</AssemblyName>
+    <GameReferenceVersion Condition="'$(GameReferenceVersion)' == ''">$(GameVersion).*</GameReferenceVersion>
+    <_GameVersion>$([System.Text.RegularExpressions.Regex]::Match('$(GameVersion)', '^\d+\.\d+\.\d+'))</_GameVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(_GameVersion)', '1.0.2'))">$(DefineConstants);GAME_1_0_2_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bannerlord.ReferenceAssemblies.Server.Core" Version="$(GameReferenceVersion)" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <GameAssembly Include="TaleWorlds.Engine;TaleWorlds.Library;TaleWorlds.ModuleManager;TaleWorlds.MountAndBlade;TaleWorlds.MountAndBlade.Diamond;TaleWorlds.MountAndBlade.Multiplayer" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.1.0" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.1.0" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" ExcludeAssets="runtime" PrivateAssets="all" Condition="$([MSBuild]::VersionLessThan('$(_GameVersion)', '1.0.2'))" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" ExcludeAssets="runtime" PrivateAssets="all" Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(_GameVersion)', '1.0.2'))" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IsExternalInit" Version="1.0.3" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Bannerlord.ServerTools.Tests" />
+  </ItemGroup>
+
+</Project>

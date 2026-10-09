@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup Condition="'$(GameVersion)' == ''">
+    <GameVersion>1.2.9</GameVersion>
+    <GameReferenceVersion>1.2.9.382561</GameReferenceVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Bannerlord.ServerJoin</RootNamespace>
+    <ModuleId>Bannerlord.ServerJoin</ModuleId>
+    <AssemblyName>$(ModuleId).v$(GameVersion)</AssemblyName>
+    <GameReferenceVersion Condition="'$(GameReferenceVersion)' == ''">$(GameVersion).*</GameReferenceVersion>
+    <_GameVersion>$([System.Text.RegularExpressions.Regex]::Match('$(GameVersion)', '^\d+\.\d+\.\d+'))</_GameVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- v1.2.0+: Multiplayer extracted to dedicated module; lobby moved to TaleWorlds.MountAndBlade.Multiplayer -->
+    <DefineConstants Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(_GameVersion)', '1.2.0'))">$(DefineConstants);GAME_1_2_0_OR_GREATER</DefineConstants>
+    <!-- v1.2.9+: Introduces MapCheckHelpers and in-game map download support -->
+    <DefineConstants Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(_GameVersion)', '1.2.9'))">$(DefineConstants);GAME_1_2_9_OR_GREATER</DefineConstants>
+    <!-- v1.5.2+: Signature change: RequestJoinCustomGame(CustomBattleId, CustomGameJoinType, string) -->
+    <DefineConstants Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(_GameVersion)', '1.5.2'))">$(DefineConstants);GAME_1_5_2_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bannerlord.ReferenceAssemblies.Core" Version="$(GameReferenceVersion)" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Bannerlord.ReferenceAssemblies.Multiplayer" Version="$(GameReferenceVersion)" GeneratePathProperty="true" ExcludeAssets="all" PrivateAssets="all"
+                      Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(_GameVersion)', '1.2.0'))" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Bannerlord.ServerTools.Tests" />
+  </ItemGroup>
+
+</Project>

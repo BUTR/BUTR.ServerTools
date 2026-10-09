@@ -1,0 +1,7 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Game Versions: v1.0.x,v1.1.x,v1.2.x,v1.3.x,v1.4.x,v1.5.x
+* Joins the server given with /joinserver <lobby id> <address:port> once the multiplayer lobby is ready
+* Signs in, checks the server's maps and asks for the password in game, like the server browser's Join button
+* One download for every game version: the module loads the build made for the running game
+---------------------------------------------------------------------------------------------------

@@ -1,0 +1,103 @@
+<Project>
+
+  <!--
+    Resolves TaleWorlds game references.
+    Bannerlord reference assembly NuGet packages distribute assemblies across both 'ref/netstandard2.0' and 'ref/net472'.
+    Standard NuGet resolution would select only one target framework directory, leaving out assemblies unique to the other.
+    We reference the packages with ExcludeAssets="all" and assemble references manually here, prioritizing netstandard2.0
+    and falling back to net472 for any assemblies not present in netstandard2.0.
+  -->
+  <Target Name="AddGameReferences" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_GameReferenceRoot Include="$(PkgBannerlord_ReferenceAssemblies_Core)" Condition="'$(PkgBannerlord_ReferenceAssemblies_Core)' != ''" />
+      <_GameReferenceRoot Include="$(PkgBannerlord_ReferenceAssemblies_Multiplayer)" Condition="'$(PkgBannerlord_ReferenceAssemblies_Multiplayer)' != ''" />
+      <_GameReferenceRoot Include="$(PkgBannerlord_ReferenceAssemblies_Server_Core)" Condition="'$(PkgBannerlord_ReferenceAssemblies_Server_Core)' != ''" />
+
+      <_GameReferenceNetStandard Include="%(_GameReferenceRoot.Identity)/ref/netstandard2.0/TaleWorlds.*.dll" />
+      <_GameReferenceNetFramework Include="%(_GameReferenceRoot.Identity)/ref/net472/TaleWorlds.*.dll" />
+      <_GameReferenceNetFramework Remove="@(_GameReferenceNetStandard)" MatchOnMetadata="Filename" />
+      <_GameReference Include="@(_GameReferenceNetStandard);@(_GameReferenceNetFramework)" />
+
+      <!-- GameAssembly items, when specified by a project, constrain referenced game assemblies to only those listed -->
+      <_GameAssemblyFile Include="@(GameAssembly->'%(Identity).dll')" />
+      <_GameReferenceUnused Include="@(_GameReference)" Condition="'@(GameAssembly)' != ''" />
+      <_GameReferenceUnused Remove="@(_GameAssemblyFile)" MatchOnMetadata="Filename" />
+      <_GameReference Remove="@(_GameReferenceUnused)" />
+
+      <Reference Include="@(_GameReference)" Private="false" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Emits assembly metadata indicating the baseline game version, matching BUTR's Bannerlord.BuildResources convention -->
+  <Target Name="AddGameVersionMetadata" BeforeTargets="CoreGenerateAssemblyInfo" Condition="'$(GameVersion)' != ''">
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>GameVersion</_Parameter1>
+        <_Parameter2>v$(GameVersion)</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Builds module implementation variants and stages the final module layout.
+    Each module defines 'Implementation' items corresponding to target game version ranges, keyed by baseline version:
+
+      <Implementation Include="1.2.9" ReferenceVersion="1.2.9.382561" />
+
+    Each variant is restored and compiled independently. The loader binary, implementation assemblies, and module
+    assets are then staged into 'artifacts/<ModuleId>/bin/<ModuleBinFolders>/' matching the layout expected by the game.
+  -->
+  <Target Name="BuildImplementations" AfterTargets="Build" Condition="'$(ImplementationProject)' != '' AND '@(Implementation)' != ''">
+    <!-- Performs an isolated restore for each implementation version before building, ensuring correct package assets are evaluated -->
+    <MSBuild Projects="$(ImplementationProject)" Targets="Restore"
+             Properties="Configuration=$(Configuration);GameVersion=%(Implementation.Identity);GameReferenceVersion=%(Implementation.ReferenceVersion);ExcludeRestorePackageImports=true" />
+    <MSBuild Projects="$(ImplementationProject)" Targets="Build"
+             Properties="Configuration=$(Configuration);GameVersion=%(Implementation.Identity);GameReferenceVersion=%(Implementation.ReferenceVersion)">
+      <Output TaskParameter="TargetOutputs" ItemName="_ImplementationAssembly" />
+    </MSBuild>
+  </Target>
+
+  <Target Name="LayoutModule" AfterTargets="BuildImplementations" Condition="'$(ImplementationProject)' != ''">
+    <PropertyGroup>
+      <ModuleOutputPath>$(ArtifactsFolder)$(ModuleId)/</ModuleOutputPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_ModuleBinFolder Include="$(ModuleBinFolders)" />
+      <_ModuleFile Include="_Module/**/*" />
+      <_ModuleBinary Include="$(TargetPath);@(_ImplementationAssembly)" />
+    </ItemGroup>
+
+    <RemoveDir Directories="$(ModuleOutputPath)" />
+    <Copy SourceFiles="@(_ModuleFile)" DestinationFiles="@(_ModuleFile->'$(ModuleOutputPath)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(_ModuleBinary)" DestinationFolder="$(ModuleOutputPath)bin/%(_ModuleBinFolder.Identity)/" />
+
+    <ReplaceInFile File="$(ModuleOutputPath)SubModule.xml" Token="$version$" Value="$(Version)" />
+
+    <Message Importance="high" Text="$(ModuleId) v$(Version) -> $([System.IO.Path]::GetFullPath('$(ModuleOutputPath)'))" />
+  </Target>
+
+  <!-- Deploys staged module files directly to a local game or dedicated server directory when ModuleDeployPath is provided -->
+  <Target Name="DeployModule" AfterTargets="LayoutModule" Condition="'$(ImplementationProject)' != '' AND '$(ModuleDeployPath)' != ''">
+    <ItemGroup>
+      <_LaidOutFile Include="$(ModuleOutputPath)**/*" />
+    </ItemGroup>
+    <!-- Clean existing deployed bin folder to prevent stale implementation assemblies from lingering -->
+    <RemoveDir Directories="$(ModuleDeployPath)/Modules/$(ModuleId)/bin" />
+    <Copy SourceFiles="@(_LaidOutFile)" DestinationFiles="@(_LaidOutFile->'$(ModuleDeployPath)/Modules/$(ModuleId)/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="$(ModuleId) -> $(ModuleDeployPath)/Modules/$(ModuleId)" />
+  </Target>
+
+  <UsingTask TaskName="ReplaceInFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <File ParameterType="System.String" Required="true" />
+      <Token ParameterType="System.String" Required="true" />
+      <Value ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        System.IO.File.WriteAllText(File, System.IO.File.ReadAllText(File).Replace(Token, Value));
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+</Project>

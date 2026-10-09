@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module>
+  <Name value="BUTR Server Join" />
+  <Id value="Bannerlord.ServerJoin" />
+  <Version value="v$version$" />
+  <DefaultModule value="false" />
+  <!--
+    MultiplayerOptional: native category for client-side modules that servers do not need to host.
+    During compatibility checks (ModuleInfoModelExtensions.IsCompatibleWith), the lobby ignores optional client modules,
+    allowing clients to join any server that permits them.
+    Servers launched with /dedicatedcustomserverDontAllowOptionalModules will disallow optional modules.
+    Do not change to 'Multiplayer', as that would cause vanilla and unmodified servers to reject clients without this module.
+  -->
+  <ModuleCategory value="MultiplayerOptional" />
+  <ModuleType value="Community" />
+  <Url value="https://www.nexusmods.com/mountandblade2bannerlord/mods/13892" />
+  <UpdateInfo value="NexusMods:13892" />
+  <DependedModules>
+    <DependedModule Id="Native" />
+    <DependedModule Id="Multiplayer" />
+  </DependedModules>
+  <SubModules>
+    <SubModule>
+      <Name value="Bannerlord.ServerJoin" />
+      <!-- Thin compatibility loader: selects and runs the appropriate Bannerlord.ServerJoin.v<version>.dll for the active game version -->
+      <DLLName value="Bannerlord.ServerJoin.dll" />
+      <SubModuleClassType value="Bannerlord.ServerJoin.SubModule" />
+      <Tags>
+        <Tag key="DedicatedServerType" value="none" />
+      </Tags>
+    </SubModule>
+  </SubModules>
+</Module>

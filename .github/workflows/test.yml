@@ -1,0 +1,99 @@
+name: Test
+
+on:
+  repository_dispatch:
+    types: [game_version_update, game_version_update_patch]
+  push:
+    branches:
+      - dev
+    paths:
+      - '.github/workflows/test.yml'
+      - 'src/**'
+      - 'build/**'
+      - 'tests/**'
+      - 'tools/**'
+  pull_request:
+    branches:
+      - dev
+    # will be triggered when undrafting or requesting review
+    types: [review_requested, ready_for_review]
+    paths:
+      - '.github/workflows/test.yml'
+      - 'src/**'
+      - 'build/**'
+      - 'tests/**'
+      - 'tools/**'
+  # Publish runs it before releasing
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  # Disable the .NET logo in the console output.
+  DOTNET_NOLOGO: true
+  # Disable the .NET first time experience to skip caching NuGet packages and speed up the build.
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Disable sending .NET CLI telemetry to Microsoft.
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  test:
+    name: Build, Test and Check Game Versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        uses: butr/actions-common-setup@v2
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+
+      # Unit tests and the AbiCheck CLI run on .NET 10, which is not provisioned by common-setup
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x.x
+
+      # Compile all implementation variants across game version ranges and stage into artifacts/<ModuleId>/
+      - name: Build Bannerlord.ServerJoin
+        run: dotnet build src/Bannerlord.ServerJoin/Bannerlord.ServerJoin.csproj --configuration Release
+        shell: pwsh
+
+      - name: Build Bannerlord.ServerInfo
+        run: dotnet build src/Bannerlord.ServerInfo/Bannerlord.ServerInfo.csproj --configuration Release
+        shell: pwsh
+
+      - name: Test
+        run: dotnet test tests/Bannerlord.ServerTools.Tests/Bannerlord.ServerTools.Tests.csproj --configuration Release
+        shell: pwsh
+
+      # Cache downloaded NuGet reference assembly packages across workflow runs to accelerate verification
+      - name: Cache Reference Assemblies
+        uses: actions/cache@v4
+        with:
+          path: ${{runner.temp}}/abicheck
+          key: abicheck-${{github.run_id}}
+          restore-keys: abicheck-
+
+      # Verifies Bannerlord.ServerJoin against all builds served on Steam branches (v1.0.0 through current beta).
+      # Confirms that all referenced TaleWorlds types and members exist with matching signatures.
+      - name: Game Versions, Bannerlord.ServerJoin
+        run: >-
+          dotnet run --project tools/AbiCheck/AbiCheck.csproj --configuration Release --
+          --module artifacts/Bannerlord.ServerJoin/bin/Win64_Shipping_Client --id Bannerlord.ServerJoin
+          --package Bannerlord.ReferenceAssemblies.Core --package Bannerlord.ReferenceAssemblies.Multiplayer
+          --steam-app 261550 --cache "${{runner.temp}}/abicheck"
+        shell: pwsh
+
+      # Verifies Bannerlord.ServerInfo against all published dedicated server reference assemblies.
+      # Steam only retains recent server builds, so this checks all published server versions.
+      - name: Game Versions, Bannerlord.ServerInfo
+        run: >-
+          dotnet run --project tools/AbiCheck/AbiCheck.csproj --configuration Release --
+          --module artifacts/Bannerlord.ServerInfo/bin/Win64_Shipping_Server --id Bannerlord.ServerInfo
+          --package Bannerlord.ReferenceAssemblies.Server.Core
+          --cache "${{runner.temp}}/abicheck"
+        shell: pwsh
+
+      - name: Upload Modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: modules
+          path: artifacts/

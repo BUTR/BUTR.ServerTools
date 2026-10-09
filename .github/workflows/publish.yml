@@ -1,0 +1,143 @@
+name: Publish Modules
+
+# Each module is released independently whenever the latest version in its changelog does not yet have a matching GitHub release:
+# - src/Bannerlord.ServerJoin/changelog.txt
+# - src/Bannerlord.ServerInfo/changelog.txt
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  # Disable the .NET logo in the console output.
+  DOTNET_NOLOGO: true
+  # Disable the .NET first time experience to skip caching NuGet packages and speed up the build.
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  # Disable sending .NET CLI telemetry to Microsoft.
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+
+  build-modules:
+    name: Build Modules
+    needs: ["test"]
+    runs-on: ubuntu-latest
+    outputs:
+      serverjoin_version: ${{ steps.serverjoin.outputs.version }}
+      serverjoin_description: ${{ steps.serverjoin.outputs.description }}
+      serverjoin_released: ${{ steps.serverjoin.outputs.released }}
+      serverinfo_version: ${{ steps.serverinfo.outputs.version }}
+      serverinfo_description: ${{ steps.serverinfo.outputs.description }}
+      serverinfo_released: ${{ steps.serverinfo.outputs.released }}
+    steps:
+      - name: Setup
+        uses: butr/actions-common-setup@v2
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x.x
+
+      # Deploy modules into local folders matching archive extraction structure: Modules/<ModuleId>/
+      - name: Build Modules
+        run: >-
+          dotnet build src/Bannerlord.ServerJoin/Bannerlord.ServerJoin.csproj --configuration Release -p:ModuleDeployPath="$PWD/serverjoin";
+          dotnet build src/Bannerlord.ServerInfo/Bannerlord.ServerInfo.csproj --configuration Release -p:ModuleDeployPath="$PWD/serverinfo";
+        shell: pwsh
+
+      - name: Install ChangelogParser
+        run: dotnet tool install -g Bannerlord.ChangelogParser
+
+      - name: Bannerlord.ServerJoin Changelog
+        id: serverjoin
+        run: bash ./.github/resources/changelog.sh Bannerlord.ServerJoin
+
+      - name: Bannerlord.ServerInfo Changelog
+        id: serverinfo
+        run: bash ./.github/resources/changelog.sh Bannerlord.ServerInfo
+
+      - name: Upload Bannerlord.ServerJoin
+        uses: actions/upload-artifact@v4
+        with:
+          name: serverjoin
+          path: ./serverjoin/
+
+      - name: Upload Bannerlord.ServerInfo
+        uses: actions/upload-artifact@v4
+        with:
+          name: serverinfo
+          path: ./serverinfo/
+
+  ###########################
+  #  BANNERLORD.SERVERJOIN  #
+  ###########################
+  serverjoin-nexusmods:
+    name: Bannerlord.ServerJoin on NexusMods
+    needs: ["build-modules"]
+    if: needs.build-modules.outputs.serverjoin_released == 'false'
+    uses: BUTR/workflows/.github/workflows/release-nexusmods.yml@master
+    with:
+      nexusmods_game_id: mountandblade2bannerlord
+      nexusmods_mod_id: 13892
+      nexusmods_file_group_id: 8115150
+      mod_filename: ServerJoin
+      mod_version: ${{ needs.build-modules.outputs.serverjoin_version }}
+      mod_description: ${{ needs.build-modules.outputs.serverjoin_description }}
+      artifact_name: serverjoin
+    secrets:
+      NEXUSMODS_APIKEY: ${{ secrets.ARAGAS_NEXUSMODS_API_KEY }}
+
+  serverjoin-github:
+    name: Bannerlord.ServerJoin on GitHub
+    needs: ["build-modules"]
+    if: needs.build-modules.outputs.serverjoin_released == 'false'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-github.yml
+    with:
+      mod_id: Bannerlord.ServerJoin
+      mod_name: BUTR Server Join
+      mod_version: ${{ needs.build-modules.outputs.serverjoin_version }}
+      mod_description: ${{ needs.build-modules.outputs.serverjoin_description }}
+      artifact_name: serverjoin
+
+  ###########################
+  #  BANNERLORD.SERVERINFO  #
+  ###########################
+  serverinfo-nexusmods:
+    name: Bannerlord.ServerInfo on NexusMods
+    needs: ["build-modules"]
+    if: needs.build-modules.outputs.serverinfo_released == 'false'
+    uses: BUTR/workflows/.github/workflows/release-nexusmods.yml@master
+    with:
+      nexusmods_game_id: mountandblade2bannerlord
+      nexusmods_mod_id: 13895
+      nexusmods_file_group_id: 8115156
+      mod_filename: ServerInfo
+      mod_version: ${{ needs.build-modules.outputs.serverinfo_version }}
+      mod_description: ${{ needs.build-modules.outputs.serverinfo_description }}
+      artifact_name: serverinfo
+    secrets:
+      NEXUSMODS_APIKEY: ${{ secrets.ARAGAS_NEXUSMODS_API_KEY }}
+
+  serverinfo-github:
+    name: Bannerlord.ServerInfo on GitHub
+    needs: ["build-modules"]
+    if: needs.build-modules.outputs.serverinfo_released == 'false'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-github.yml
+    with:
+      mod_id: Bannerlord.ServerInfo
+      mod_name: BUTR Server Info
+      mod_version: ${{ needs.build-modules.outputs.serverinfo_version }}
+      mod_description: ${{ needs.build-modules.outputs.serverinfo_description }}
+      artifact_name: serverinfo

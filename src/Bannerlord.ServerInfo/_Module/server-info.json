@@ -1,0 +1,25 @@
+{
+  // Metadata displayed to players in the Vortex server browser and other community tools.
+  // After editing this file, enter 'reload_server_info' in the dedicated server console to apply changes without restarting.
+  //
+  // Note: Modules actively loaded by the server are published automatically.
+  // Use this file to provide download links, hide private admin tools, or specify client-only mods (such as UI enhancements).
+  "description": "",
+  "links": [
+    // Example: { "label": "Discord", "url": "https://discord.gg/yourserver" }
+  ],
+  "clientModules": [
+    // Example (Nexus Mods link for a required server mod):
+    // { "id": "MyMod", "nexusMods": { "modId": 1234, "fileId": 5678 } },
+    //
+    // Example (Client-only mod not loaded on the dedicated server; always optional):
+    // { "id": "MyUiMod", "name": "My UI Mod", "version": "v1.0.0", "url": "https://example.com/mod" }
+  ],
+  // Optional Nexus Mods collection allowing players to install all required mods with one click.
+  // The slug is found in the collection URL: nexusmods.com/games/mountandblade2bannerlord/collections/<slug>.
+  // Omit "revision" to always recommend the latest revision.
+  // "nexusMods": { "collection": { "slug": "example-collection", "revision": 1, "required": true } },
+  //
+  // Server-side community modules that should be hidden from public server listings (e.g. private admin tools):
+  "hiddenServerModules": []
+}
