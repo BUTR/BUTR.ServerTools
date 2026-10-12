@@ -33,7 +33,7 @@ jobs:
       url: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.mod_id }}-v${{ inputs.mod_version }}
     steps:
       - name: Download Module artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ inputs.artifact_name }}
           path: ./artifact
