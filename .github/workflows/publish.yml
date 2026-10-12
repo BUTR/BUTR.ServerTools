@@ -65,13 +65,13 @@ jobs:
         run: bash ./.github/resources/changelog.sh Bannerlord.ServerInfo
 
       - name: Upload Bannerlord.ServerJoin
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: serverjoin
           path: ./serverjoin/
 
       - name: Upload Bannerlord.ServerInfo
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: serverinfo
           path: ./serverinfo/
